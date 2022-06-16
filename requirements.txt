@@ -1,4 +1,1 @@
-pymongo
-requests
-py-cord
-asyncio
+
