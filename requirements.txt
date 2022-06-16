@@ -1,3 +1,2 @@
-py-cord
 pymongo
 requests
