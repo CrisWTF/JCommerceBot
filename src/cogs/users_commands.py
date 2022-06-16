@@ -506,6 +506,7 @@ class seller_commands(Cog):
                     else:
                         response, token = await vipPayment(int(user['roblox_id']), int(user['universe_id']), amount)
                         if response.status_code == 200:
+                            collection_users.update_one({'id':user['id']},{'$set':{'balance.current': user['balance']['current'] - amount}})
                             await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the robux has been deposited in your account', delete_after=3.0, ephemeral=True)
                         elif response.status_code == 400:
                             await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the place does not have the correct price', delete_after=3.0, ephemeral=True)
@@ -517,6 +518,7 @@ class seller_commands(Cog):
                 elif method == 'Group':
                     response, token = await groupPayment(int(user['roblox_id']), amount)
                     if response.status_code == 200:
+                        collection_users.update_one({'id':user['id']},{'$set':{'balance.current': user['balance']['current'] - amount}})
                         await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the robux has been deposited in your account', delete_after=3.0, ephemeral=True)
                     else:
                         await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you can not use it yet', delete_after=3.0, ephemeral=True)
