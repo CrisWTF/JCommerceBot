@@ -21,7 +21,7 @@ class JCommerce(Bot):
 
     async def on_ready(self):
         self.add_view(buttons.Button_Buy())
-        print('Pito puto')
+        print('is on')
 
     async def on_member_remove(self,member):
         user = collection_users.find_one({'id': str(member.id)})
