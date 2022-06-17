@@ -85,7 +85,7 @@ class seller_commands(Cog):
                         await member.send(embed=embed)
                 if shop:
                     if datetime.datetime.now() > shop['finish']:
-                        guild = self.bot.fetch_guild(GUILD_ID)
+                        guild = await self.bot.fetch_guild(GUILD_ID)
                         member = guild.get_member(int(user['id']))
                         seller_role = guild.get_role(SELLER_ROLE_ID)
                         embed = Embed(
