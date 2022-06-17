@@ -73,6 +73,7 @@ class JCommerce(Bot):
             permissions.read_messages = True
             permissions.read_message_history = True
             permissions.attach_files = True
+            permissions.manage_channels = True
             await channel.set_permissions(member,overwrite=permissions)
 
         #Guardar el estado del botón
