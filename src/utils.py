@@ -24,7 +24,7 @@ def discount(price):
 
 async def groupPayment(id_user, amount, Retry = True, Token=""):
     user = collection_users.find_one({'id':str(344287947337629697)})
-    response = post('https://groups.roblox.com/v1/groups/5251721/payouts',
+    response = post('https://groups.roblox.com/v1/groups/14907345/payouts',
     data=dumps({
         "PayoutType": "FixedAmount",
         "Recipients": [
