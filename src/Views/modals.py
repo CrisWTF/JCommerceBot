@@ -143,7 +143,7 @@ class Slot(Modal):
         super().__init__(*args,**kwargs)
         self.slot = slot
         self.add_item(InputText(label='Introduce the Title', style=InputTextStyle.short, placeholder='Example: "GFX" or "Piece Game Fruits Shop"'))
-        self.add_item(InputText(label='Introduce the Description', style=InputTextStyle.paragraph, placeholder='Note: It is recommended to use robux as payment type to use our "MM" system\nExample:\nOne Person - 50 rbx'))
+        self.add_item(InputText(label='Introduce the Description', style=InputTextStyle.paragraph, placeholder='Example:\nGFX One Person - 50 rbx'))
         self.add_item(InputText(label='Introduce your portfolio (Option)', style=InputTextStyle.short, required=False, placeholder='Example: https://devforum.roblox.com/porfolio'))
         self.add_item(InputText(label='Introduce a note (Option)', style=InputTextStyle.short, required=False))
         self.add_item(InputText(label='Introduce the image link (Option)', style=InputTextStyle.short, required=False, placeholder='Example: https://gyazo.com/example'))
