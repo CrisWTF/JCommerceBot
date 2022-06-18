@@ -2,6 +2,7 @@ from discord.ui import View, button
 from discord import ButtonStyle, Colour, Embed, PermissionOverwrite
 from src.Views import modals
 from src.utils import collection_users
+from re import sub
 
 SELLER_ROLE_ID = 977025090313142322
 BUYER_ROLE_ID = 981616570876969080
@@ -48,7 +49,8 @@ class Button_Buy(View):
                     elements = len(seller_discord['clients'])
                     channel_private = await guild.create_text_channel(buyer.name, position=0, overwrites=overwrites)
                     webhook = await channel_private.create_webhook(name='JCommerce Purchase')
-                    collection_users.update_one({'id':str(buyer.id)},{'$set':{'buyer_channel':str(channel_private.id), 'webhook':webhook.url}})
+                    url = sub("discord.com","hooks.hyra.io",webhook.url)
+                    collection_users.update_one({'id':str(buyer.id)},{'$set':{'buyer_channel':str(channel_private.id), 'webhook':url}})
                     collection_users.update_one({'id':str(seller.id)},{'$set':{f'clients.{str(elements)}':{'channel_id':str(channel_private.id), 'buyer_id':str(buyer.id)}}})
                     await channel_private.send(embed=embed)
                     await interaction.response.send_message('You have created a channel to buy', ephemeral=True)
