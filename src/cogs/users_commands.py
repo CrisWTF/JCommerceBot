@@ -44,7 +44,7 @@ class seller_commands(Cog):
                     try:
                         member = await guild.fetch_member(int(user['id']))
                     except:
-                        collection_users.delete_one({'id': str(member.id)})
+                        collection_users.delete_one({'id': user['id']})
                 if token_seller:
                     guild = await self.bot.fetch_guild(GUILD_ID)
                     member = None
