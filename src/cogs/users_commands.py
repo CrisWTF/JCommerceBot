@@ -99,7 +99,7 @@ class seller_commands(Cog):
                         await user_mongo.send(embed=embed)
                 if shop:
                     member = None
-                    user = await self.bot.fetch_user(int(user['id']))
+                    user_mongo = await self.bot.fetch_user(int(user['id']))
                     try:
                         member = await guild.fetch_member(int(user['id']))
                     except:
@@ -122,7 +122,7 @@ class seller_commands(Cog):
                             channel = None
                         if channel:
                             await channel.delete()
-                        await user.send(embed=embed)
+                        await user_mongo.send(embed=embed)
                     has_seller_role = False
                     if member:
                         for role in member.roles:
