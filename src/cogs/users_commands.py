@@ -321,7 +321,7 @@ class seller_commands(Cog):
         onChannel = False
         for client in seller['clients']:
             if int(client['channel_id']) == channel.id:
-                buyer = await guild.fetch_member(int(client['buyer_id']))
+                buyer = await self.bot.fetch_user(int(client['buyer_id']))
                 buyer_mongo = collection_users.find_one({'id': client['buyer_id']})
                 onChannel = True
         if onChannel:
@@ -346,7 +346,6 @@ class seller_commands(Cog):
     @has_role('Seller')
     async def cancel_key(self, ctx):
         channel = ctx.interaction.channel
-        guild = ctx.interaction.guild
         seller = None
         try:
             seller = collection_users.find_one({'id':str(ctx.interaction.user.id)})
@@ -358,7 +357,7 @@ class seller_commands(Cog):
         onChannel = False
         for client in seller['clients']:
             if int(client['channel_id']) == channel.id:
-                buyer = await guild.fetch_member(int(client['buyer_id']))
+                buyer = await self.bot.fetch_user(int(client['buyer_id']))
                 buyer_mongo = collection_users.find_one({'id': client['buyer_id']})
                 onChannel = True
         if onChannel:
@@ -429,7 +428,6 @@ class seller_commands(Cog):
     @has_role('Buyer')
     async def close(self, ctx):
         channel = ctx.interaction.channel
-        guild = ctx.interaction.guild
         user = None
         try:
             user = collection_users.find_one({'id':str(ctx.interaction.user.id)})
@@ -452,7 +450,7 @@ class seller_commands(Cog):
                             position_client += 1
                         break
                 if buyer['balance']['pending'] == 0 and not buyer['token_buyer']:
-                    seller_member = await guild.fetch_member(int(seller['id']))
+                    seller_member = await self.bot.fetch_user(int(seller['id']))
                     embed = Embed(
                         title='Purchase',
                         description=f'The buyer channel **{channel.name}** has been closed.',
@@ -480,7 +478,7 @@ class seller_commands(Cog):
                         break
                     position_client += 1
                 if onChannel:
-                    buyer_member = await guild.fetch_member(int(buyer['id']))
+                    buyer_member = await self.bot.fetch_user(int(buyer['id']))
                     embed = Embed(
                         title='Purchase',
                         description=f'The buyer channel **{channel.name}** has been closed.',
