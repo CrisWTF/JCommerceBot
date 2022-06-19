@@ -21,7 +21,7 @@ class JCommerce(Bot):
 
     async def on_ready(self):
         self.add_view(buttons.Button_Buy())
-        print('Is Already On')
+        print('Is On')
 
     async def on_member_remove(self,member):
         user = collection_users.find_one({'id': str(member.id)})
@@ -32,7 +32,7 @@ class JCommerce(Bot):
                     channel_user = await guild.fetch_channel(user['shop']['channel']['id'])
                     await channel_user.delete()
                     collection_users.update_one({'id':str(member.id)},{'$set':{f'shop.channel.id':None, 'shop.channel.messages': [None,None,None,None,None]}})
-            if not user['buyer_channel']:
+            if not user['buyer_channel'] and not user['shop']:
                 collection_users.delete_one({'id': str(member.id)})
 
     async def on_raw_reaction_add(self, payload):
