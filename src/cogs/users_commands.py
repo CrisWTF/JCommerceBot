@@ -39,7 +39,11 @@ class seller_commands(Cog):
                 token_buyer = user['token_buyer'] if user['token_buyer'] else None
                 if token_seller:
                     guild = await self.bot.fetch_guild(GUILD_ID)
-                    member = await guild.fetch_member(int(user['id']))
+                    member = None
+                    try:
+                        member = await guild.fetch_member(int(user['id']))
+                    except:
+                        continue
                     if user['payment_seller']['new'] >=  int(user['payment_seller']['price']):
                         seller_role = guild.get_role(SELLER_ROLE_ID)
                         days = None
@@ -84,10 +88,10 @@ class seller_commands(Cog):
                         collection_users.update_one({'id':user['id']},{'$set':{'token_seller':None, 'payment_seller':None}})
                         await member.send(embed=embed)
                 if shop:
+                    member = None
+                    guild = await self.bot.fetch_guild(GUILD_ID)
+                    seller_role = guild.get_role(SELLER_ROLE_ID)
                     if datetime.datetime.now() > shop['finish']:
-                        guild = await self.bot.fetch_guild(GUILD_ID)
-                        member = guild.get_member(int(user['id']))
-                        seller_role = guild.get_role(SELLER_ROLE_ID)
                         embed = Embed(
                                 title='Shop',
                                 description='Your **shop** has expired',
@@ -99,6 +103,17 @@ class seller_commands(Cog):
                         if channel:
                             await channel.delete()
                         await member.send(embed=embed)
+                    try:
+                        member = await guild.fetch_member(int(user['id']))
+                    except:
+                        continue
+                    has_seller_role = False
+                    for role in member.roles:
+                        if role.id == SELLER_ROLE_ID:
+                            has_seller_role = True
+                            break
+                    if not has_seller_role:
+                        await member.add_roles(seller_role)
                 if token_buyer:
                     try:
                         guild = await self.bot.fetch_guild(GUILD_ID)
