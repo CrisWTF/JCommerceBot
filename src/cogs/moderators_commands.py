@@ -66,18 +66,24 @@ class admin_commands(Cog):
             position_client = 0
             for user in users:
                 if not buyer:
-                    if user['buyer_channel']:
-                        if int(user['buyer_channel']) == channel.id:
-                            buyer = user
-                            continue
+                    try:
+                        if user['buyer_channel']:
+                            if int(user['buyer_channel']) == channel.id:
+                                buyer = user
+                                continue
+                    except:
+                        continue
                 if not seller:
-                    if user['clients']:
-                        for client in user['clients']:
-                            if int(client['channel_id']) == channel.id:
-                                seller = user
-                                onChannel = True
-                                break
-                            position_client += 1
+                    try:
+                        if user['clients']:
+                            for client in user['clients']:
+                                if int(client['channel_id']) == channel.id:
+                                    seller = user
+                                    onChannel = True
+                                    break
+                                position_client += 1
+                    except:
+                        continue
                 if seller and buyer:
                     break
             if onChannel:
