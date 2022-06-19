@@ -47,11 +47,11 @@ class seller_commands(Cog):
                         collection_users.delete_one({'id': user['id']})
                 if token_seller:
                     guild = await self.bot.fetch_guild(GUILD_ID)
-                    member = None
+                    user_mongo = await self.bot.fetch_user(int(user['id']))
                     try:
                         member = await guild.fetch_member(int(user['id']))
                     except:
-                        continue
+                        member = None
                     if user['payment_seller']['new'] >=  int(user['payment_seller']['price']):
                         seller_role = guild.get_role(SELLER_ROLE_ID)
                         days = None
@@ -74,7 +74,7 @@ class seller_commands(Cog):
                                 color=Colour.blue()
                             )
                             collection_users.update_one({'id':user['id']},{'$set':{'token_seller': None, 'shop.finish': user['shop']['finish'] + datetime.timedelta(days=days), 'payment_seller': None}})
-                            await member.send(embed=embed)
+                            await user_mongo.send(embed=embed)
                         else:
                             embed = Embed(
                                 title='Shop',
@@ -85,8 +85,9 @@ class seller_commands(Cog):
                                 collection_users.update_one({'id':user['id']},{'$set':{'token_seller': None, 'shop': {'channel':{'id':None, 'messages': [None,None,None,None,None]},'created':datetime.datetime.now(),'finish':datetime.datetime.now()+datetime.timedelta(days=days)}, 'payment_seller': None, 'clients':[]}})
                             else:
                                 collection_users.update_one({'id':user['id']},{'$set':{'token_seller': None, 'shop': {'channel':{'id':None, 'messages': [None,None,None,None,None]},'created':datetime.datetime.now(),'finish':datetime.datetime.now()+datetime.timedelta(hours=hour)}, 'payment_seller': None, 'clients':[]}})
-                            await member.add_roles(seller_role)
-                            await member.send(embed=embed)
+                            if member:
+                                await member.add_roles(seller_role)
+                            await user_mongo.send(embed=embed)
                     if datetime.datetime.now() > token_seller['finish']:
                         embed = Embed(
                                 title='Key',
@@ -94,34 +95,41 @@ class seller_commands(Cog):
                                 color=Colour.blue()
                             )
                         collection_users.update_one({'id':user['id']},{'$set':{'token_seller':None, 'payment_seller':None}})
-                        await member.send(embed=embed)
+                        await user_mongo.send(embed=embed)
                 if shop:
                     member = None
+                    user = await self.bot.fetch_user(int(user['id']))
+                    try:
+                        member = await guild.fetch_member(int(user['id']))
+                    except:
+                        member = None
                     guild = await self.bot.fetch_guild(GUILD_ID)
                     seller_role = guild.get_role(SELLER_ROLE_ID)
                     if datetime.datetime.now() > shop['finish']:
+                        channel = None
                         embed = Embed(
                                 title='Shop',
                                 description='Your **shop** has expired',
                                 color=Colour.blue()
                             )
                         collection_users.update_one({'id':user['id']},{'$set':{'shop':None}})
-                        await member.remove_roles(seller_role)
-                        channel = await guild.fetch_channel(user['shop']['channel']['id'])
+                        if member:
+                            await member.remove_roles(seller_role)
+                        try:
+                            channel = await guild.fetch_channel(user['shop']['channel']['id'])
+                        except:
+                            channel = None
                         if channel:
                             await channel.delete()
-                        await member.send(embed=embed)
-                    try:
-                        member = await guild.fetch_member(int(user['id']))
-                    except:
-                        continue
+                        await user.send(embed=embed)
                     has_seller_role = False
-                    for role in member.roles:
-                        if role.id == SELLER_ROLE_ID:
-                            has_seller_role = True
-                            break
-                    if not has_seller_role:
-                        await member.add_roles(seller_role)
+                    if member:
+                        for role in member.roles:
+                            if role.id == SELLER_ROLE_ID:
+                                has_seller_role = True
+                                break
+                        if not has_seller_role:
+                            await member.add_roles(seller_role)
                 if token_buyer:
                     try:
                         guild = await self.bot.fetch_guild(GUILD_ID)
