@@ -309,7 +309,6 @@ class seller_commands(Cog):
     @has_role('Seller')
     async def create_key(self, ctx, price: Option(int,'The price of the product')):
         channel = ctx.interaction.channel
-        guild = ctx.interaction.guild
         seller = None
         try:
             seller = collection_users.find_one({'id':str(ctx.interaction.user.id)})
@@ -392,36 +391,42 @@ class seller_commands(Cog):
             return
         buyer = None
         seller = None
-        if user['buyer_channel']:
-            if int(user['buyer_channel']) == channel.id:
-                buyer = user
-                users = collection_users.find()
-                for user in users:
-                    if user['clients']:
-                        for client in user['clients']:
-                            if int(client['channel_id']) == channel.id:
-                                seller = user
+        try:
+            if user['buyer_channel']:
+                if int(user['buyer_channel']) == channel.id:
+                    buyer = user
+                    users = collection_users.find()
+                    for user in users:
+                        try:
+                            if user['clients']:
+                                for client in user['clients']:
+                                    if int(client['channel_id']) == channel.id:
+                                        seller = user
+                                        break
                                 break
-                        break
-                if buyer['balance']['pending'] > 0:
-                    if not buyer['token_buyer']:
-                        collection_users.update_one({'id':seller['id']},{'$set':{'balance.current': seller['balance']['current'] + buyer['balance']['pending']}})
-                        collection_users.update_one({'id':buyer['id']},{'$set':{'balance.pending': 0}})
-                        embed = Embed(
-                            title='Key',
-                            description=f'The payment has been confirmed.\n**{int(buyer["balance"]["pending"])}** has been deposited in the **balance** of the seller.',
-                            color=Colour.blue()
-                        )
-                        embed.set_footer(text='Take into account the 30 percent of roblox', icon_url='')
-                        await channel.send(embed=embed)
-                        await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you have confirmed a payment', delete_after=3.0, ephemeral=True)
+                        except:
+                            continue
+                    if buyer['balance']['pending'] > 0:
+                        if not buyer['token_buyer']:
+                            collection_users.update_one({'id':seller['id']},{'$set':{'balance.current': seller['balance']['current'] + buyer['balance']['pending']}})
+                            collection_users.update_one({'id':buyer['id']},{'$set':{'balance.pending': 0}})
+                            embed = Embed(
+                                title='Key',
+                                description=f'The payment has been confirmed.\n**{int(buyer["balance"]["pending"])}** has been deposited in the **balance** of the seller.',
+                                color=Colour.blue()
+                            )
+                            embed.set_footer(text='Take into account the 30 percent of roblox', icon_url='')
+                            await channel.send(embed=embed)
+                            await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you have confirmed a payment', delete_after=3.0, ephemeral=True)
+                        else:
+                            await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you need to complete the payment or the seller have to use "/cancel_key"', delete_after=3.0, ephemeral=True)
                     else:
-                        await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you need to complete the payment or the seller have to use "/cancel_key"', delete_after=3.0, ephemeral=True)
+                        await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you do not have a pending payment', delete_after=3.0, ephemeral=True)
                 else:
-                    await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you do not have a pending payment', delete_after=3.0, ephemeral=True)
+                    await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you can not use it here', delete_after=3.0, ephemeral=True)
             else:
-                await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you can not use it here', delete_after=3.0, ephemeral=True)
-        else:
+                await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you do not have a purchase channel', delete_after=3.0, ephemeral=True)
+        except:
             await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you do not have a purchase channel', delete_after=3.0, ephemeral=True)
 
     @slash_command(description='Close a purchase channel', guild_only=True)
@@ -440,19 +445,23 @@ class seller_commands(Cog):
         if user['buyer_channel']:
             if int(user['buyer_channel']) == channel.id:
                 buyer = user
-                users = collection_users.find()
-                for user in users:
-                    if user['clients']:
-                        for client in user['clients']:
-                            if int(client['channel_id']) == channel.id:
-                                seller = user
+                users = await find_all()
+                if users:
+                    for user in users:
+                        try:
+                            if user['clients']:
+                                for client in user['clients']:
+                                    if int(client['channel_id']) == channel.id:
+                                        seller = user
+                                        break
+                                    position_client += 1
                                 break
-                            position_client += 1
-                        break
+                        except:
+                            continue
+                else:
+                    await ctx.interaction.response.send_message(f'Try Again', delete_after=3.0, ephemeral=True) 
                 if buyer['balance']['pending'] == 0 and not buyer['token_buyer']:
-                    print('funciona')
                     seller_member = await self.bot.fetch_user(int(seller['id']))
-                    print(seller_member)
                     embed = Embed(
                         title='Purchase',
                         description=f'The buyer channel **{channel.name}** has been closed.',
