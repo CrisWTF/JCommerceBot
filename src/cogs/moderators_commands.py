@@ -81,8 +81,8 @@ class admin_commands(Cog):
                 if seller and buyer:
                     break
             if onChannel:
-                buyer_member = await guild.fetch_member(int(buyer['id']))
-                seller_member = await guild.fetch_member(int(seller['id']))
+                buyer_member = await self.bot.fetch_user(int(buyer['id']))
+                seller_member = await self.bot.fetch_user(int(seller['id']))
                 embed = Embed(
                     title='Purchase',
                     description=f'The buyer channel **{channel.name}** has been closed.',
