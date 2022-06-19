@@ -37,6 +37,14 @@ class seller_commands(Cog):
                 token_seller = user['token_seller'] if user['token_seller'] else None
                 shop = user['shop'] if user['shop'] else None
                 token_buyer = user['token_buyer'] if user['token_buyer'] else None
+                buyer_channel = user['buyer_channel'] if user['buyer_channel'] else None
+                if not buyer_channel:
+                    guild = await self.bot.fetch_guild(GUILD_ID)
+                    member = None
+                    try:
+                        member = await guild.fetch_member(int(user['id']))
+                    except:
+                        collection_users.delete_one({'id': str(member.id)})
                 if token_seller:
                     guild = await self.bot.fetch_guild(GUILD_ID)
                     member = None
