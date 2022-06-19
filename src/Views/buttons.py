@@ -7,6 +7,7 @@ from re import sub
 SELLER_ROLE_ID = 977025090313142322
 BUYER_ROLE_ID = 981616570876969080
 MODERATOR_ROLE_ID = 983890772971638796
+PURCHASES_CATALOG_ID = 988012987333885962
 # ------------------------------- Create ---------------------------------------------
 
 class Button_Buy(View):
@@ -48,7 +49,8 @@ class Button_Buy(View):
                         embed.add_field(name='Buyer:', value='1. If you pay something for robux and the seller has not made the trade, you can call a moderator in "#support" to cancel it and get your robux back.\n2. Once the purchase is made, you will not be able to use "/close", it is to secure the purchase.', inline=False)
                         embed.add_field(name='Seller:', value='1. If you sell something and the payment is not robux, we are not responsible. Otherwise, you can use "/create_key".\n2. Pls take the evidence when you make the exchange to avoid any inconvenience (Only if the payment was for robux).', inline=False)
                         elements = len(seller_discord['clients'])
-                        channel_private = await guild.create_text_channel(buyer.name, position=0, overwrites=overwrites)
+                        purchase_category = await guild.fetch_channel(PURCHASES_CATALOG_ID)
+                        channel_private = await purchase_category.create_text_channel(buyer.name, position=0, overwrites=overwrites)
                         webhook = await channel_private.create_webhook(name='JCommerce Purchase')
                         url = sub("discord.com","hooks.hyra.io",webhook.url)
                         collection_users.update_one({'id':str(buyer.id)},{'$set':{'buyer_channel':str(channel_private.id), 'webhook':url}})
