@@ -450,7 +450,9 @@ class seller_commands(Cog):
                             position_client += 1
                         break
                 if buyer['balance']['pending'] == 0 and not buyer['token_buyer']:
+                    print('funciona')
                     seller_member = await self.bot.fetch_user(int(seller['id']))
+                    print(seller_member)
                     embed = Embed(
                         title='Purchase',
                         description=f'The buyer channel **{channel.name}** has been closed.',
