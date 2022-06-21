@@ -21,7 +21,7 @@ class JCommerce(Bot):
 
     async def on_ready(self):
         self.add_view(buttons.Button_Buy())
-        print('Is Ready')
+        print('Now work')
 
     async def on_member_remove(self,member):
         user = collection_users.find_one({'id': str(member.id)})
@@ -61,7 +61,8 @@ class JCommerce(Bot):
                             channel = await guild.fetch_channel(int(client['channel_id']))
                             await channel.set_permissions(payload.member,overwrite=permissions)
             else:
-                await payload.member.add_roles(member_role)
+                collection_users.insert_one({'id':str(payload.member.id), 'roblox_id':None, 'universe_id':None, 'shop':None, 'payment_buyer':None, 'payment_seller':None, 'token_buyer':None, 'token_seller':None, 'balance':{'current':0, 'pending':0}, 'buyer_channel':None})
+                await payload.member.add_roles(member_role, buyer_role)
         elif str(payload.emoji) == '🔧' and payload.message_id == SUPPORT_ID_MESSAGE:
             member: Member = payload.member
             guild = self.get_guild(GUILD_ID)
