@@ -24,19 +24,20 @@ class seller_commands(Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.check_tokens.start()
+        self.check_token_seller.start()
+        self.check_shop.start()
+        self.check_user_guild.start()
+        self.check_token_buyer.start()
 
     shop_group = SlashCommandGroup(name='shop',description='Commands for buyers and sellers', guild_only=True)
     channel_subgroup = shop_group.create_subgroup('edit', description='Commands for edit your channel')
 
-    @tasks.loop()
-    async def check_tokens(self):
+    @tasks.loop(seconds=5)
+    async def check_user_guild(self):
         users = await find_all()
         if users:
             for user in users:
-                token_seller = user['token_seller'] if user['token_seller'] else None
                 shop = user['shop'] if user['shop'] else None
-                token_buyer = user['token_buyer'] if user['token_buyer'] else None
                 buyer_channel = user['buyer_channel'] if user['buyer_channel'] else None
                 if not buyer_channel and not shop:
                     guild = await self.bot.fetch_guild(GUILD_ID)
@@ -45,6 +46,83 @@ class seller_commands(Cog):
                         member = await guild.fetch_member(int(user['id']))
                     except:
                         collection_users.delete_one({'id': user['id']})
+
+    @tasks.loop(seconds=5)
+    async def check_token_buyer(self):
+        users = await find_all()
+        if users:
+            for user in users:
+                token_buyer = user['buyer_channel'] if user['buyer_channel'] else None
+                if token_buyer:
+                    try:
+                        guild = await self.bot.fetch_guild(GUILD_ID)
+                        channel = await guild.fetch_channel(user['buyer_channel'])
+                        if user['payment_buyer']['new'] >=  int(user['payment_buyer']['price']):
+                            embed = Embed(
+                                    title='Purchase',
+                                    description='The payment has been successful, now you can trade safely',
+                                    color=Colour.blue()
+                                )
+                            collection_users.update_one({'id':user['id']},{'$set':{'token_buyer': None, 'payment_buyer': None, 'balance.pending':int(user['balance']['pending'] + int(discount(int(user['payment_buyer']['price']))))}})
+                            await channel.send(embed=embed)
+                        if datetime.datetime.now() > token_buyer['finish']:
+                            embed = Embed(
+                                    title='Key',
+                                    description='The **key** has expired',
+                                    color=Colour.blue()
+                                )
+                            collection_users.update_one({'id':user['id']},{'$set':{'token_buyer':None, 'payment_buyer':None}})
+                            await channel.send(embed=embed)
+                    except:
+                        pass
+
+    @tasks.loop(seconds=5)
+    async def check_shop(self):
+        users = await find_all()
+        if users:
+            for user in users:
+                shop = user['shop'] if user['shop'] else None
+                if shop:
+                    member = None
+                    user_mongo = await self.bot.fetch_user(int(user['id']))
+                    try:
+                        member = await guild.fetch_member(int(user['id']))
+                    except:
+                        member = None
+                    guild = await self.bot.fetch_guild(GUILD_ID)
+                    seller_role = guild.get_role(SELLER_ROLE_ID)
+                    if datetime.datetime.now() > shop['finish']:
+                        channel = None
+                        embed = Embed(
+                                title='Shop',
+                                description='Your **shop** has expired',
+                                color=Colour.blue()
+                            )
+                        collection_users.update_one({'id':user['id']},{'$set':{'shop':None}})
+                        if member:
+                            await member.remove_roles(seller_role)
+                        try:
+                            channel = await guild.fetch_channel(user['shop']['channel']['id'])
+                        except:
+                            channel = None
+                        if channel:
+                            await channel.delete()
+                        await user_mongo.send(embed=embed)
+                    has_seller_role = False
+                    if member:
+                        for role in member.roles:
+                            if role.id == SELLER_ROLE_ID:
+                                has_seller_role = True
+                                break
+                        if not has_seller_role:
+                            await member.add_roles(seller_role)
+
+    @tasks.loop(seconds=5)
+    async def check_token_seller(self):
+        users = await find_all()
+        if users:
+            for user in users:
+                token_seller = user['token_seller'] if user['token_seller'] else None
                 if token_seller:
                     member = None
                     guild = await self.bot.fetch_guild(GUILD_ID)
@@ -89,7 +167,7 @@ class seller_commands(Cog):
                             if member:
                                 await member.add_roles(seller_role)
                             await user_mongo.send(embed=embed)
-                    if datetime.datetime.now() > token_seller['finish']:
+                    if datetime.datetime.now() >= token_seller['finish']:
                         embed = Embed(
                                 title='Key',
                                 description='Your **key** has expired',
@@ -97,62 +175,6 @@ class seller_commands(Cog):
                             )
                         collection_users.update_one({'id':user['id']},{'$set':{'token_seller':None, 'payment_seller':None}})
                         await user_mongo.send(embed=embed)
-                if shop:
-                    member = None
-                    user_mongo = await self.bot.fetch_user(int(user['id']))
-                    try:
-                        member = await guild.fetch_member(int(user['id']))
-                    except:
-                        member = None
-                    guild = await self.bot.fetch_guild(GUILD_ID)
-                    seller_role = guild.get_role(SELLER_ROLE_ID)
-                    if datetime.datetime.now() > shop['finish']:
-                        channel = None
-                        embed = Embed(
-                                title='Shop',
-                                description='Your **shop** has expired',
-                                color=Colour.blue()
-                            )
-                        collection_users.update_one({'id':user['id']},{'$set':{'shop':None}})
-                        if member:
-                            await member.remove_roles(seller_role)
-                        try:
-                            channel = await guild.fetch_channel(user['shop']['channel']['id'])
-                        except:
-                            channel = None
-                        if channel:
-                            await channel.delete()
-                        await user_mongo.send(embed=embed)
-                    has_seller_role = False
-                    if member:
-                        for role in member.roles:
-                            if role.id == SELLER_ROLE_ID:
-                                has_seller_role = True
-                                break
-                        if not has_seller_role:
-                            await member.add_roles(seller_role)
-                if token_buyer:
-                    try:
-                        guild = await self.bot.fetch_guild(GUILD_ID)
-                        channel = await guild.fetch_channel(user['buyer_channel'])
-                        if user['payment_buyer']['new'] >=  int(user['payment_buyer']['price']):
-                            embed = Embed(
-                                    title='Purchase',
-                                    description='The payment has been successful, now you can trade safely',
-                                    color=Colour.blue()
-                                )
-                            collection_users.update_one({'id':user['id']},{'$set':{'token_buyer': None, 'payment_buyer': None, 'balance.pending':int(user['balance']['pending'] + int(discount(int(user['payment_buyer']['price']))))}})
-                            await channel.send(embed=embed)
-                        if datetime.datetime.now() > token_buyer['finish']:
-                            embed = Embed(
-                                    title='Key',
-                                    description='The **key** has expired',
-                                    color=Colour.blue()
-                                )
-                            collection_users.update_one({'id':user['id']},{'$set':{'token_buyer':None, 'payment_buyer':None}})
-                            await channel.send(embed=embed)
-                    except:
-                        pass
 
     @slash_command(description='Verify your account for buy or sell', guild_only=True)
     async def verify(self,ctx):
