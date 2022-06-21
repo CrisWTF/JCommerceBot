@@ -55,7 +55,7 @@ class Verify_Modal(Modal):
                 color=Colour.blue()
             )
             embed.set_image(url=response.json()['data'][0]['imageUrl'])
-            embed.set_footer(text='This information is necessary for the purchase\nand sale of products',icon_url='')
+            embed.set_footer(text='This information is necessary for the to\nuse our MM system',icon_url='')
             await interaction.response.send_message(f'{interaction.user.mention}, check your dm',delete_after=3.0, ephemeral=True)
             await interaction.user.send(embed=embed,view=buttons.Verify(roblox_id=roblox_id))
         else:
@@ -69,27 +69,14 @@ class Verify_Place(Modal):
         self.add_item(InputText(label='Enter your Place ID',style=InputTextStyle.short))
 
     async def callback(self,interaction):
-        guild = interaction.client.get_guild(GUILD_ID)
-        buyer_role = guild.get_role(BUYER_ROLE_ID)
-        seller_role = guild.get_role(SELLER_ROLE_ID)
-        member = guild.get_member(interaction.user.id)
-        member_id = str(interaction.user.id)
         exist_id = requests.get(f'https://api.roblox.com/universes/get-universe-containing-place?placeid={self.children[0].value}')
-        user = collection_users.find_one({'id':member_id})
         if exist_id.status_code == 200:
             universe_id = exist_id.json()['UniverseId']
             response = requests.get(f"https://games.roblox.com/v1/games", params=f"universeIds={universe_id}", headers={'Content-Type': 'application/json'})
             creator_id = response.json()['data'][0]['creator']['id']
-            if user:
+            if str(self.roblox_id) == str(creator_id):
                 collection_users.update_one({'id':str(interaction.user.id)},{'$set':{'roblox_id':str(self.roblox_id), 'universe_id':str(universe_id)}})
-                await member.add_roles(buyer_role)
-                if user['shop']:
-                    await member.add_roles(seller_role)
-                await interaction.response.send_message(f'{interaction.user.mention}, your data has been saved correctly, now you can buy or sell', delete_after=3.0, ephemeral=True)
-            elif not user and str(self.roblox_id) == str(creator_id):
-                collection_users.insert_one({'id':str(interaction.user.id), 'roblox_id':str(self.roblox_id), 'universe_id':str(universe_id), 'shop':None, 'payment_buyer':None, 'payment_seller':None, 'token_buyer':None, 'token_seller':None, 'balance':{'current':0, 'pending':0}, 'buyer_channel':None})
-                await member.add_roles(buyer_role)
-                await interaction.response.send_message(f'{interaction.user.mention}, your data has been saved correctly, now you can buy or sell', delete_after=3.0, ephemeral=True)
+                await interaction.response.send_message(f'{interaction.user.mention}, your data has been saved correctly, now you can use our MM system', delete_after=3.0, ephemeral=True)
             else:
                 await interaction.response.send_message(f'{interaction.user.mention}, the roblox user does not match with the place', delete_after=3.0, ephemeral=True)
         else:
@@ -189,3 +176,4 @@ class Slot(Modal):
                     await interaction.response.send_message(f'{interaction.user.mention}, your message has been successfully saved/modified"', delete_after=3.0, ephemeral=True)
                 except:
                     await interaction.response.send_message(f'{interaction.user.mention}, your image must be a link (http or https)', delete_after=3.0, ephemeral=True)
+
