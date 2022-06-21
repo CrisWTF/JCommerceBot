@@ -225,6 +225,7 @@ class seller_commands(Cog):
         if user:
             roblox_id = None
             place_id = None
+            image = None
             if user['universe_id']:
                 response = requests.get("https://games.roblox.com/v1/games", params=f'universeIds={user["universe_id"]}', headers={'Content-Type': 'application/json'})
                 place_id = response.json()['data'][0]['rootPlaceId']
@@ -235,6 +236,7 @@ class seller_commands(Cog):
             else:
                 roblox_id = None
                 place_id = None
+                image = None
             embed = Embed(
                 title='Current Data',
                 description='A representation of your data',
@@ -259,7 +261,8 @@ class seller_commands(Cog):
                     embed.add_field(name='Shop', value=f'Name: *None*\nCreated: *{user["shop"]["created"].strftime("%Y-%B-%d %H:%M")}*\nFinish Date: *{user["shop"]["finish"].strftime("%Y-%B-%d %H:%M")}*', inline=False)
             else:
                 embed.add_field(name='Shop', value='None')
-            embed.set_image(url=image)
+            if image:
+                embed.set_image(url=image)
             embed.set_footer(text='You can use "/verify" to update your data')
             await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, check your dm', delete_after=3.0, ephemeral=True)
             await ctx.interaction.user.send(embed=embed)   
