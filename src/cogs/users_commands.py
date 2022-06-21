@@ -28,6 +28,7 @@ class seller_commands(Cog):
         self.check_shop.start()
         self.check_user_guild.start()
         self.check_token_buyer.start()
+        self.check_buyer.start()
 
     shop_group = SlashCommandGroup(name='shop',description='Commands for buyers and sellers', guild_only=True)
     channel_subgroup = shop_group.create_subgroup('edit', description='Commands for edit your channel')
@@ -79,12 +80,35 @@ class seller_commands(Cog):
                             pass
 
     @tasks.loop(seconds=5)
+    async def check_buyer(self):
+        if self.bot.status == Status.online:
+            users = await find_all()
+            if users:
+                for user in users:
+                    member = None
+                    guild = await self.bot.fetch_guild(GUILD_ID)
+                    try:
+                        member = await guild.fetch_member(int(user['id']))
+                    except:
+                        member = None
+                    buyer_role = guild.get_role(BUYER_ROLE_ID)
+                    has_buyer_role = False
+                    if member:
+                        for role in member.roles:
+                            if str(role) == 'Buyer':
+                                has_buyer_role = True
+                                break
+                        if not has_buyer_role:
+                            await member.add_roles(buyer_role) 
+                           
+            
+    @tasks.loop(seconds=5)
     async def check_shop(self):
         if self.bot.status == Status.online:
             users = await find_all()
             if users:
                 for user in users:
-                    shop = user['shop'] if user['shop'] else None
+                    shop = user['shop']
                     if shop:
                         member = None
                         guild = await self.bot.fetch_guild(GUILD_ID)
@@ -114,7 +138,7 @@ class seller_commands(Cog):
                         has_seller_role = False
                         if member:
                             for role in member.roles:
-                                if role.id == SELLER_ROLE_ID:
+                                if str(role) == 'Seller':
                                     has_seller_role = True
                                     break
                             if not has_seller_role:
@@ -199,19 +223,31 @@ class seller_commands(Cog):
             await ctx.interaction.response.send_message(f'Try Again', delete_after=3.0, ephemeral=True)
             return
         if user:
-            response = requests.get("https://games.roblox.com/v1/games", params=f'universeIds={user["universe_id"]}', headers={'Content-Type': 'application/json'})
-            place_id = response.json()['data'][0]['rootPlaceId']
-            roblox_name = response.json()['data'][0]['creator']['name']
-            roblox_id = response.json()['data'][0]['creator']['id']
-            response = requests.get(f'https://thumbnails.roblox.com/v1/users/avatar?userIds={str(roblox_id)}&size=250x250&format=Png&isCircular=false')
-            image = response.json()['data'][0]['imageUrl']
+            roblox_id = None
+            place_id = None
+            if user['universe_id']:
+                response = requests.get("https://games.roblox.com/v1/games", params=f'universeIds={user["universe_id"]}', headers={'Content-Type': 'application/json'})
+                place_id = response.json()['data'][0]['rootPlaceId']
+                roblox_name = response.json()['data'][0]['creator']['name']
+                roblox_id = response.json()['data'][0]['creator']['id']
+                response = requests.get(f'https://thumbnails.roblox.com/v1/users/avatar?userIds={str(roblox_id)}&size=250x250&format=Png&isCircular=false')
+                image = response.json()['data'][0]['imageUrl']
+            else:
+                roblox_id = None
+                place_id = None
             embed = Embed(
                 title='Current Data',
                 description='A representation of your data',
                 color=Colour.blue()
             )
-            embed.add_field(name='Roblox User', value=f'[{roblox_name}](https://www.roblox.com/users/{roblox_id}/profile)', inline=False)
-            embed.add_field(name='Place ID', value=str(place_id), inline=False)
+            if roblox_id:
+                embed.add_field(name='Roblox User', value=f'[{roblox_name}](https://www.roblox.com/users/{roblox_id}/profile)', inline=False)
+            else:
+                embed.add_field(name='Roblox User', value=None, inline=False)
+            if place_id:
+                embed.add_field(name='Place ID', value=str(place_id), inline=False)
+            else:
+                embed.add_field(name='Place ID', value=None, inline=False)
             embed.add_field(name='Balance', value=str(int(user['balance']['current'])), inline=False)
             has_shop = user['shop']
             if has_shop:
@@ -226,10 +262,7 @@ class seller_commands(Cog):
             embed.set_image(url=image)
             embed.set_footer(text='You can use "/verify" to update your data')
             await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, check your dm', delete_after=3.0, ephemeral=True)
-            await ctx.interaction.user.send(embed=embed)
-        else:
-            await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you have not current data, use "/verify" to create one', delete_after=3.0, ephemeral=True)
-            
+            await ctx.interaction.user.send(embed=embed)   
 
     @shop_group.command(description='Create a shop')
     @has_role('Buyer')
@@ -565,37 +598,40 @@ class seller_commands(Cog):
         except:
             await ctx.interaction.response.send_message(f'Try Again', delete_after=3.0, ephemeral=True)
             return
-        if user['balance']['current'] > 0:
-            if user['balance']['current'] >= amount:
-                if method == 'Server-Vip':
-                    if amount < 10:
-                        await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the amount must be +10', delete_after=3.0, ephemeral=True)
-                    else:
-                        response, token = await vipPayment(int(user['roblox_id']), int(user['universe_id']), amount)
+        if user['roblox_id']:
+            if user['balance']['current'] > 0:
+                if user['balance']['current'] >= amount:
+                    if method == 'Server-Vip':
+                        if amount < 10:
+                            await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the amount must be +10', delete_after=3.0, ephemeral=True)
+                        else:
+                            response, token = await vipPayment(int(user['roblox_id']), int(user['universe_id']), amount)
+                            if response.status_code == 200:
+                                collection_users.update_one({'id':user['id']},{'$set':{'balance.current': user['balance']['current'] - amount}})
+                                await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the robux has been deposited in your account', delete_after=3.0, ephemeral=True)
+                            elif response.status_code == 400:
+                                await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the place does not have the correct price', delete_after=3.0, ephemeral=True)
+                            else:
+                                await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you can not use it yet', delete_after=3.0, ephemeral=True)
+                            if response.status_code == 401:
+                                user = await self.bot.fetch_user(344287947337629697)
+                                await user.send('Key expired')
+                    elif method == 'Group':
+                        response, token = await groupPayment(int(user['roblox_id']), amount)
                         if response.status_code == 200:
                             collection_users.update_one({'id':user['id']},{'$set':{'balance.current': user['balance']['current'] - amount}})
                             await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the robux has been deposited in your account', delete_after=3.0, ephemeral=True)
-                        elif response.status_code == 400:
-                            await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the place does not have the correct price', delete_after=3.0, ephemeral=True)
                         else:
                             await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you can not use it yet', delete_after=3.0, ephemeral=True)
                         if response.status_code == 401:
                             user = await self.bot.fetch_user(344287947337629697)
                             await user.send('Key expired')
-                elif method == 'Group':
-                    response, token = await groupPayment(int(user['roblox_id']), amount)
-                    if response.status_code == 200:
-                        collection_users.update_one({'id':user['id']},{'$set':{'balance.current': user['balance']['current'] - amount}})
-                        await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, the robux has been deposited in your account', delete_after=3.0, ephemeral=True)
-                    else:
-                        await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you can not use it yet', delete_after=3.0, ephemeral=True)
-                    if response.status_code == 401:
-                        user = await self.bot.fetch_user(344287947337629697)
-                        await user.send('Key expired')
+                else:
+                    await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you do not have enough funds', delete_after=3.0, ephemeral=True)
             else:
-                await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you do not have enough funds', delete_after=3.0, ephemeral=True)
+                await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you do not have funds to withdraw', delete_after=3.0, ephemeral=True)
         else:
-            await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you do not have funds to withdraw', delete_after=3.0, ephemeral=True)
+            await ctx.interaction.response.send_message(f'{ctx.interaction.user.mention}, you must to verify your roblox user with "/verify"', delete_after=3.0, ephemeral=True)
 
 def setup(bot):
     bot.add_cog(seller_commands(bot))
