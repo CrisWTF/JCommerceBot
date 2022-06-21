@@ -5,6 +5,7 @@ from src.utils import collection_users, discount, update_one, find_all
 GUILD_ID = 976734513000493077
 ADMINISTRATOR_ROLE_ID = 983891360648155186
 MODERATOR_ROLE_ID = 983890772971638796
+BUYER_ROLE_ID = 981616570876969080
 
 class admin_commands(Cog):
     def __init__(self, bot):
@@ -48,7 +49,7 @@ class admin_commands(Cog):
 
     @slash_command(description='Clear messages from a channel', guild_only=True)
     @has_any_role('Moderator', 'Administrator')
-    async def clear(self, ctx, ammount: Option(int, 'Ammount of messages to delete')):
+    async def clear(self, ctx, ammount: Option(int, 'Amount of messages to delete')):
         channel = ctx.interaction.channel
         await channel.purge(limit=ammount)
         await ctx.interaction.response.send_message(f'Massages cleanneds', delete_after=3.0, ephemeral=True)
@@ -57,7 +58,6 @@ class admin_commands(Cog):
     @has_any_role('Moderator', 'Administrator')
     async def end(self, ctx):
         channel = ctx.interaction.channel
-        guild = ctx.interaction.guild
         users = await find_all()
         if users:
             buyer = None
