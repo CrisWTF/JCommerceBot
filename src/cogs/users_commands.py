@@ -87,12 +87,12 @@ class seller_commands(Cog):
                     shop = user['shop'] if user['shop'] else None
                     if shop:
                         member = None
+                        guild = await self.bot.fetch_guild(GUILD_ID)
                         user_mongo = await self.bot.fetch_user(int(user['id']))
                         try:
                             member = await guild.fetch_member(int(user['id']))
                         except:
                             member = None
-                        guild = await self.bot.fetch_guild(GUILD_ID)
                         seller_role = guild.get_role(SELLER_ROLE_ID)
                         if datetime.datetime.now() > shop['finish']:
                             channel = None
